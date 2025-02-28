@@ -1,4 +1,6 @@
+#include <Arduino.h>
 #include <CAN.h>
+
 
 const int analogPin = 33;  // ADC-capable pin
 int analogValue = 0;
@@ -30,5 +32,5 @@ void loop() {
     CAN.write(analogStr[i]);  // Send each digit as a byte
   }
   CAN.endPacket();
-  // delay(500);  // Delay based on A&A requirements.
+  delay(500);  // Delay based on A&A requirements.
 }
