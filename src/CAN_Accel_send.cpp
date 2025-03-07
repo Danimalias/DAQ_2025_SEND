@@ -3,6 +3,7 @@
 //#include <SPI.h>
 #include <Adafruit_LIS3DH.h>
 #include <Adafruit_Sensor.h>
+#include <CAN.h>
 // Used for software SPI
 //#define LIS3DH_CLK 13
 //#define LIS3DH_MISO 12
@@ -15,9 +16,38 @@
 //Adafruit_LIS3DH lis = Adafruit_LIS3DH(LIS3DH_CS);
 // I2C
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
+
+
+void sendCAN(float xaccel, float yaccel, float zaccel) {
+  int16_t x = (int16_t)(xaccel * 100); // Scale by 100 to preserve 2 decimal places
+  int16_t y = (int16_t)(yaccel * 100);
+  int16_t z = (int16_t)(zaccel * 100);
+
+  Serial.print("Sending XYZ Accel - X: ");
+  Serial.print(x);
+  Serial.print(" Y: ");
+  Serial.print(y);
+  Serial.print(" Z: ");
+  Serial.println(z);
+
+  CAN.beginPacket(0x18);
+  CAN.write(x >> 8); // High byte of X
+  CAN.write(x & 0xFF); // Low byte of X
+  CAN.write(y >> 8); // High byte of Y
+  CAN.write(y & 0xFF); // Low byte of Y
+  CAN.write(z >> 8); // High byte of Z
+  CAN.write(z & 0xFF); // Low byte of Z
+  CAN.endPacket();
+}
+
 void setup(void) {
   Serial.begin(115200);
   while (!Serial) delay(10);     // will pause Zero, Leonardo, etc until serial console opens
+  while (!CAN.begin(500E3)) {  // 500 kbps
+    Serial.println("CAN bus initialization failed, retrying...");
+    delay(1000);
+  }
+  Serial.println("CAN bus started");
   Serial.println("LIS3DH test!");
   if (! lis.begin(0x18)) {   // change this to 0x19 for alternative i2c address
     Serial.println("Couldnt start");
@@ -43,12 +73,13 @@ void setup(void) {
   }
 }
 void loop() {
+    //Serial.println("loop"); 
   lis.read();      // get X Y and Z data at once
   // Then print out the raw data
-  Serial.print("X:  "); Serial.print(lis.x);
-  Serial.print("  \tY:  "); Serial.print(lis.y);
-  Serial.print("  \tZ:  "); Serial.print(lis.z);
-  /* Or....get a new sensor event, normalized */
+  Serial.print("Raw X:  "); Serial.print(lis.x);
+  Serial.print("  \t Raw Y:  "); Serial.print(lis.y);
+  Serial.print("  \t Raw Z:  "); Serial.print(lis.z);
+//   /* Or....get a new sensor event, normalized */
   sensors_event_t event;
   lis.getEvent(&event);
   /* Display the results (acceleration is measured in m/s^2) */
@@ -57,6 +88,7 @@ void loop() {
   Serial.print(" \tZ: "); Serial.print(event.acceleration.z);
   Serial.println(" m/s^2 ");
   Serial.println();
+  sendCAN(event.acceleration.x, event.acceleration.y,event.acceleration.z ); 
   delay(200);
 }
 
