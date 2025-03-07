@@ -307,23 +307,29 @@ volatile unsigned long leftPulseInterval = 0;
 volatile unsigned long rightLastPulseTime = 0;
 volatile unsigned long rightPulseInterval = 0;
 
-// ISR for left sensor pulse
+static unsigned long lastLeftPulseCheck = 0;
+static unsigned long lastRightPulseCheck = 0;
+
+
 void IRAM_ATTR leftSensorISR() {
   unsigned long now = micros();
   if (leftLastPulseTime > 0) {
     leftPulseInterval = now - leftLastPulseTime;
   }
   leftLastPulseTime = now;
+  lastLeftPulseCheck = millis();  // Update timestamp ONLY when pulse occurs
 }
 
-// ISR for right sensor pulse
 void IRAM_ATTR rightSensorISR() {
   unsigned long now = micros();
   if (rightLastPulseTime > 0) {
     rightPulseInterval = now - rightLastPulseTime;
   }
   rightLastPulseTime = now;
+  lastRightPulseCheck = millis();  // Update timestamp ONLY when pulse occurs
 }
+
+
 
 // Provided sendCAN function that sends two RPM values over CAN
 void sendCAN(float leftRPM, float rightRPM) {
@@ -374,10 +380,19 @@ void setup() {
 
 void loop() {
   static unsigned long lastUpdateTime = 0;
-  
-  // Check if it is time to update (every 100ms)
+  const unsigned long timeout = 2 * UPDATE_INTERVAL; // Allow enough time for slow pulses
+
+  // Check if it is time to update (every UPDATE_INTERVAL)
   if (millis() - lastUpdateTime >= UPDATE_INTERVAL) {
     lastUpdateTime = millis();
+
+    // If no new pulses were detected in the timeout period, reset the interval
+    if ((millis() - lastLeftPulseCheck) >= timeout) {
+      leftPulseInterval = 0;  // No recent pulse, force RPM to zero
+    }
+    if ((millis() - lastRightPulseCheck) >= timeout) {
+      rightPulseInterval = 0;  // No recent pulse, force RPM to zero
+    }
 
     // Calculate RPM from the most recent pulse intervals
     float leftRPM = calculateRPM(leftPulseInterval);
@@ -387,6 +402,7 @@ void loop() {
     sendCAN(leftRPM, rightRPM);
   }
 }
+
 
 // #include <Arduino.h>
 // #include <CAN.h>
