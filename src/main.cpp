@@ -1,5 +1,5 @@
-// #include <Arduino.h>
-// #include <CAN.h>
+#include <Arduino.h>
+#include <CAN.h>
 
 //CODE FOR SENDING JOYSTICK DATA
 
@@ -36,6 +36,8 @@
 //   delay(200);  // Delay for receiver loop. should match. 
 // }
 
+
+//CODE FOR SEND ALL (look at test.cpp for most recent code)
 // #include <Arduino.h>
 // #include <CAN.h>
 // #include <Wire.h>

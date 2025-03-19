@@ -183,3 +183,4 @@ float calculateRPM(unsigned long pulseInterval) {
   float rpm = (1.0 / timePerRevolution) * 60.0;
   return rpm;
 }
+
