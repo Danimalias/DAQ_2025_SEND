@@ -11,12 +11,11 @@ char analogStr[5];  // Buffer to hold 4-digit string + null terminator
 unsigned long lastAnalogSendTime = 0;
 const unsigned long analogSendInterval = 200;  // Send interval for analog sensor
 
-// Accelerometer Setup
-Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 
 // RPM Sensor Setup
 #define LEFT_SENSOR_PIN 25
 #define RIGHT_SENSOR_PIN 3
+#define I2C_DEV_ADDR 0x55
 volatile unsigned long leftLastPulseTime = 0;
 volatile unsigned long leftPulseInterval = 0;
 volatile unsigned long rightLastPulseTime = 0;
@@ -27,7 +26,7 @@ const unsigned long rpmUpdateInterval = 1000;  // Update interval for RPM sensor
 
 // Function Declarations
 void sendAnalogData();
-void sendAccelerometerData();
+//void sendAccelerometerData();
 void sendRPMData();
 void leftSensorISR();
 void rightSensorISR();
@@ -46,11 +45,11 @@ void setup() {
   Serial.println("CAN started!");
 
   // Initialize Accelerometer
-  if (!lis.begin(0x18)) {  // Change to 0x19 for alternative I2C address
-    Serial.println("Could not start LIS3DH!");
-    while (1);
-  }
-  Serial.println("LIS3DH found!");
+//   if (!lis.begin(0x18)) {  // Change to 0x19 for alternative I2C address
+//     Serial.println("Could not start LIS3DH!");
+//     while (1);
+//   }
+//   Serial.println("LIS3DH found!");
 
   // Initialize RPM Sensors
   pinMode(LEFT_SENSOR_PIN, INPUT_PULLUP);
@@ -70,7 +69,7 @@ void loop() {
   }
 
   // Send Accelerometer Data
-  sendAccelerometerData();
+  //sendAccelerometerData();
 
   // Send RPM Data
   static unsigned long lastRPMUpdateTime = 0;
@@ -95,37 +94,37 @@ void sendAnalogData() {
 }
 
 // Function to Send Accelerometer Data
-void sendAccelerometerData() {
-  static unsigned long lastAccelSendTime = 0;
-  const unsigned long accelSendInterval = 1000;  // Send interval for accelerometer
+// void sendAccelerometerData() {
+//   static unsigned long lastAccelSendTime = 0;
+//   const unsigned long accelSendInterval = 1000;  // Send interval for accelerometer
 
-  if (millis() - lastAccelSendTime >= accelSendInterval) {
-    sensors_event_t event;
-    lis.getEvent(&event);
+//   if (millis() - lastAccelSendTime >= accelSendInterval) {
+//     sensors_event_t event;
+//     lis.getEvent(&event);
 
-    int16_t x = (int16_t)(event.acceleration.x * 100);  // Scale by 100 to preserve 2 decimal places
-    int16_t y = (int16_t)(event.acceleration.y * 100);
-    int16_t z = (int16_t)(event.acceleration.z * 100);
+//     int16_t x = (int16_t)(event.acceleration.x * 100);  // Scale by 100 to preserve 2 decimal places
+//     int16_t y = (int16_t)(event.acceleration.y * 100);
+//     int16_t z = (int16_t)(event.acceleration.z * 100);
 
-    Serial.print("Sending XYZ Accel - X: ");
-    Serial.print(x);
-    Serial.print(" Y: ");
-    Serial.print(y);
-    Serial.print(" Z: ");
-    Serial.println(z);
+//     Serial.print("Sending XYZ Accel - X: ");
+//     Serial.print(x);
+//     Serial.print(" Y: ");
+//     Serial.print(y);
+//     Serial.print(" Z: ");
+//     Serial.println(z);
 
-    CAN.beginPacket(0x18);  // Send packet with ID 0x18
-    CAN.write(x >> 8);  // High byte of X
-    CAN.write(x & 0xFF);  // Low byte of X
-    CAN.write(y >> 8);  // High byte of Y
-    CAN.write(y & 0xFF);  // Low byte of Y
-    CAN.write(z >> 8);  // High byte of Z
-    CAN.write(z & 0xFF);  // Low byte of Z
-    CAN.endPacket();
+//     CAN.beginPacket(0x18);  // Send packet with ID 0x18
+//     CAN.write(x >> 8);  // High byte of X
+//     CAN.write(x & 0xFF);  // Low byte of X
+//     CAN.write(y >> 8);  // High byte of Y
+//     CAN.write(y & 0xFF);  // Low byte of Y
+//     CAN.write(z >> 8);  // High byte of Z
+//     CAN.write(z & 0xFF);  // Low byte of Z
+//     CAN.endPacket();
 
-    lastAccelSendTime = millis();
-  }
-}
+//     lastAccelSendTime = millis();
+//   }
+// }
 
 // Function to Send RPM Data
 void sendRPMData() {
@@ -183,4 +182,3 @@ float calculateRPM(unsigned long pulseInterval) {
   float rpm = (1.0 / timePerRevolution) * 60.0;
   return rpm;
 }
-
